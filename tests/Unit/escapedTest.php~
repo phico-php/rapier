@@ -1,0 +1,15 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Escaped with at directives are compiled', function () {
+    // expect(blayde()->string('@@foreach'))->toBe('@foreach');
+    // expect(blayde()->string('@@verbatim @@continue @@endverbatim'))->toBe('@verbatim @continue @endverbatim');
+    // expect(blayde()->string('@@foreach($I as $x)'))->toBe('@foreach($I as $x)');
+    expect(blayde()->string('@@continue @@break'))->toBe('@continue @break');
+    // expect(blayde()->string('@@foreach(
+    //     $I as $x
+    // )'))->toBe('@foreach(
+    //     $I as $x
+    // )');
+});

@@ -1,0 +1,19 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Cannot statements are compiled', function () {
+    $string = '@cannot (\'update\', [$post])
+breeze
+@elsecannot(\'delete\', [$post])
+sneeze
+@endcannot';
+    $expected = '<?php if (app(\\Illuminate\\Contracts\\Auth\\Access\\Gate::class)->denies(\'update\', [$post])): ?>
+breeze
+<?php elseif (app(\\Illuminate\\Contracts\\Auth\\Access\\Gate::class)->denies(\'delete\', [$post])): ?>
+sneeze
+<?php endif; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});
+

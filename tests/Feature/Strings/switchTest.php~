@@ -1,0 +1,44 @@
+<?php
+
+namespace Tests\Unit\Blayde;
+
+test('@switch', function ($expect, $value) {
+
+    $in = <<<'BLADE'
+@switch($value)
+    @case(1)
+        One
+        @break
+    @case(2)
+        Two
+        @break
+    @default
+        Default
+@endswitch
+BLADE;
+
+    $out = blayde()->string($in, ['value' => $value]);
+    expect($out)->toBe($expect);
+
+})->with([
+            // Test case where the value is 1
+            ["One\n", 1],
+
+            // Test case where the value is 2
+            ["Two\n", 2],
+
+            // Test case where the value is neither 1 nor 2 (default case)
+            ["Default\n", 3],
+
+            // Test case where the value is null (default case)
+            ["Default\n", null],
+
+            // Test case where the value is an empty string (default case)
+            ["Default\n", ""],
+
+            // Test case where the value is a string that does not match any case (default case)
+            ["Default\n", "non-matching string"],
+
+            // Test case where the value is a float that does not match any case (default case)
+            ["Default\n", 1.5],
+        ]);

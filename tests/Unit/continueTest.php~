@@ -1,0 +1,68 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Continue statements are compiled', function () {
+    $string = '@for ($i = 0; $i < 10; $i++)
+test
+@continue
+@endfor';
+    $expected = '<?php for($I = 0; $I < 10; $I++): ?>
+test
+<?php continue; ?>
+<?php endfor; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Continue statements with expression are compiled', function () {
+    $string = '@for ($i = 0; $i < 10; $i++)
+test
+@continue(TRUE)
+@endfor';
+    $expected = '<?php for($i = 0; $i < 10; $i++): ?>
+test
+<?php if(TRUE) continue; ?>
+<?php endfor; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Continue statements with argument are compiled', function () {
+    $string = '@for ($i = 0; $i < 10; $i++)
+test
+@continue(2)
+@endfor';
+    $expected = '<?php for($i = 0; $i < 10; $i++): ?>
+test
+<?php continue 2; ?>
+<?php endfor; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Continue statements with spaced argument are compiled', function () {
+    $string = '@for ($i = 0; $i < 10; $i++)
+test
+@continue( 2 )
+@endfor';
+    $expected = '<?php for($i = 0; $i < 10; $i++): ?>
+test
+<?php continue 2; ?>
+<?php endfor; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Continue statements with faulty argument are compiled', function () {
+    $string = '@for ($i = 0; $i < 10; $i++)
+test
+@continue(-2)
+@endfor';
+    $expected = '<?php for($i = 0; $i < 10; $i++): ?>
+test
+<?php continue 1; ?>
+<?php endfor; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});

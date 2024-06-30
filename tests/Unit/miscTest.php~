@@ -1,0 +1,191 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Custom PHP code is correctly handled', function () {
+    expect(blayde()->string("@if(\$test) <?php @show('test'); ?> @endif"))
+        ->toBe('<?php if($test): ?> <?php @show(\'test\'); ?> <?php endif; ?>');
+});
+
+test('Mixing yield and echo', function () {
+    expect(blayde()->string("@yield('title') - {{Config::get('site.title')}}"))
+        ->toBe('<?php echo $__env->yieldContent(\'title\'); ?> - <?php echo e(Config::get(\'site.title\')); ?>');
+});
+
+// test('Custom extensions are compiled', function () {
+//     blayde()->extend(function ($value) {
+//         return str_replace('foo', 'bar', $value);
+//     });
+//     expect(blayde()->string('foo'))->toBe('bar');
+// });
+
+// test('Custom statements', function () {
+//     expect(blayde()->getCustomDirectives())->toHaveCount(0);
+
+//     blayde()->directive('customControl', function ($expression) {
+//         return "<?php echo custom_control({$expression}); ?>";
+//     });
+
+//     expect(blayde()->getCustomDirectives())->toHaveCount(1);
+
+//     $string = '@if($foo)
+// @customControl(10, $foo, \'bar\')
+// @endif';
+//     $expected = '<?php if($foo): ?>
+// <?php echo custom_control(10, $foo, \'bar\'); ?>
+// <?php endif; ?>';
+//     expect(blayde()->string($string))->toBe($expected);
+// });
+
+test('Custom short statements', function () {
+    blayde()->directive('customControl', function ($expression) {
+        return '<?php echo custom_control(); ?>';
+    });
+
+    $string = '@customControl';
+    $expected = '<?php echo custom_control(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Valid custom names', function () {
+    expect(blayde()->directive('custom', function () { }))->toBeNull();
+    expect(blayde()->directive('custom_custom', function () { }))->toBeNull();
+    expect(blayde()->directive('customCustom', function () { }))->toBeNull();
+    expect(blayde()->directive('custom::custom', function () { }))->toBeNull();
+});
+
+test('Invalid custom names', function () {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('The directive name [custom-custom] is not valid.');
+    blayde()->directive('custom-custom', function () { });
+});
+
+test('Invalid custom names 2', function () {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('The directive name [custom:custom] is not valid.');
+    blayde()->directive('custom:custom', function () { });
+});
+
+test('Custom extension overwrites core', function () {
+    blayde()->directive('foreach', function ($expression) {
+        return '<?php custom(); ?>';
+    });
+
+    $string = '@foreach';
+    $expected = '<?php custom(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom conditions', function () {
+    blayde()->if('custom', function ($user) {
+        return true;
+    });
+
+    $string = '@custom($user)
+@endcustom';
+    $expected = '<?php if (\Illuminate\Support\Facades\Blade::check(\'custom\', $user)): ?>
+<?php endif; ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom if-else conditions', function () {
+    blayde()->if('custom', function ($anything) {
+        return true;
+    });
+
+    $string = '@custom($user)
+@elsecustom($product)
+@else
+@endcustom';
+    $expected = '<?php if (\Illuminate\Support\Facades\Blade::check(\'custom\', $user)): ?>
+<?php elseif (\Illuminate\Support\Facades\Blade::check(\'custom\', $product)): ?>
+<?php else: ?>
+<?php endif; ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom conditions accepts 0 as argument', function () {
+    blayde()->if('custom', function ($number) {
+        return true;
+    });
+
+    $string = '@custom(0)
+@elsecustom(0)
+@endcustom';
+    $expected = '<?php if (\Illuminate\Support\Facades\Blade::check(\'custom\', 0)): ?>
+<?php elseif (\Illuminate\Support\Facades\Blade::check(\'custom\', 0)): ?>
+<?php endif; ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom components', function () {
+    blayde()->component('app.components.alert', 'alert');
+
+    $string = '@alert
+@endalert';
+    $expected = '<?php $__env->startComponent(\'app.components.alert\'); ?>
+<?php echo $__env->renderComponent(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom components with slots', function () {
+    blayde()->component('app.components.alert', 'alert');
+
+    $string = '@alert([\'type\' => \'danger\'])
+@endalert';
+    $expected = '<?php $__env->startComponent(\'app.components.alert\', [\'type\' => \'danger\']); ?>
+<?php echo $__env->renderComponent(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom components default alias', function () {
+    blayde()->component('app.components.alert');
+
+    $string = '@alert
+@endalert';
+    $expected = '<?php $__env->startComponent(\'app.components.alert\'); ?>
+<?php echo $__env->renderComponent(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom components with existing directive', function () {
+    blayde()->component('app.components.foreach');
+
+    $string = '@foreach
+@endforeach';
+    $expected = '<?php $__env->startComponent(\'app.components.foreach\'); ?>
+<?php echo $__env->renderComponent(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom includes', function () {
+    blayde()->include('app.includes.input', 'input');
+
+    $string = '@input';
+    $expected = '<?php echo $__env->make(\'app.includes.input\', [], \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom includes with data', function () {
+    blayde()->include('app.includes.input', 'input');
+
+    $string = '@input([\'type\' => \'email\'])';
+    $expected = '<?php echo $__env->make(\'app.includes.input\', [\'type\' => \'email\'], \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom includes default alias', function () {
+    blayde()->include('app.includes.input');
+
+    $string = '@input';
+    $expected = '<?php echo $__env->make(\'app.includes.input\', [], \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Custom includes with existing directive', function () {
+    blayde()->include('app.includes.foreach');
+
+    $string = '@foreach';
+    $expected = '<?php echo $__env->make(\'app.includes.foreach\', [], \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
+    expect(blayde()->string($string))->toBe($expected);
+});

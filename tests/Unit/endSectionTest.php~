@@ -1,0 +1,7 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('End sections are compiled', function () {
+    expect(blayde()->string('@endsection'))->toBe('<?php $__env->stopSection(); ?>');
+});

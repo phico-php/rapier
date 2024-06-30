@@ -1,0 +1,18 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Can statements are compiled', function () {
+    $string = '@can (\'update\', [$post])
+breeze
+@elsecan(\'delete\', [$post])
+sneeze
+@endcan';
+    $expected = '<?php if (app(\\Illuminate\\Contracts\\Auth\\Access\\Gate::class)->check(\'update\', [$post])): ?>
+breeze
+<?php elseif (app(\\Illuminate\\Contracts\\Auth\\Access\\Gate::class)->check(\'delete\', [$post])): ?>
+sneeze
+<?php endif; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});

@@ -1,0 +1,18 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Canany statements are compiled', function () {
+    $string = '@canany ([\'create\', \'update\'], [$post])
+breeze
+@elsecanany([\'delete\', \'approve\'], [$post])
+sneeze
+@endcan';
+    $expected = '<?php if (app(\\Illuminate\\Contracts\\Auth\\Access\\Gate::class)->any([\'create\', \'update\'], [$post])): ?>
+breeze
+<?php elseif (app(\\Illuminate\\Contracts\\Auth\\Access\\Gate::class)->any([\'delete\', \'approve\'], [$post])): ?>
+sneeze
+<?php endif; ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});

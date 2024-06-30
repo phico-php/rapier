@@ -1,0 +1,16 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Expressions on the same line', function () {
+    $string = '@lang(foo(bar(baz(qux(breeze()))))) space () @lang(foo(bar))';
+    $expected = '<?php echo app(\'translator\')->getFromJson(foo(bar(baz(qux(breeze()))))); ?> space () <?php echo app(\'translator\')->getFromJson(foo(bar)); ?>';
+
+    expect(blayde()->string($string))->toBe($expected);
+});
+
+test('Expression within HTML', function () {
+    expect(blayde()->string('<html {{ $foo }}>'))->toBe('<html <?php echo e($foo); ?>>');
+    expect(blayde()->string('<html{{ $foo }}>'))->toBe('<html<?php echo e($foo); ?>>');
+    expect(blayde()->string('<html {{ $foo }} @lang(\'foo\')>'))->toBe('<html <?php echo e($foo); ?> <?php echo app(\'translator\')->getFromJson(\'foo\'); ?>>');
+});

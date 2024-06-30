@@ -1,0 +1,36 @@
+{
+  "name": "phico/rapier",
+  "description": "Lightweight, dependency free Blade syntax renderer, built for Phico",
+  "type": "project",
+  "license": "BSD-3-Clause",
+  "autoload": {
+    "psr-4": {
+      "Phico\\View\\Rapier\\": "src/"
+    },
+    "files": [
+      "src/functions.php"
+    ]
+  },
+  "authors": [
+    {
+      "name": "indgy",
+      "email": "me@indgy.uk"
+    }
+  ],
+  "minimum-stability": "stable",
+  "config": {
+    "allow-plugins": {
+      "phpstan/extension-installer": true,
+      "pestphp/pest-plugin": true
+    }
+  },
+  "require": {
+    "phico/filesystem": "dev-main",
+    "phico/support": "dev-main"
+  },
+  "require-dev": {
+    "php": "^8.0",
+    "phpstan/phpstan": "*",
+    "pestphp/pest": "^2.34"
+  }
+}

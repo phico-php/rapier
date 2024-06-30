@@ -1,0 +1,52 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('Echos are compiled', function () {
+    expect(blayde()->string('{!!$name!!}'))->toBe('<?php echo $name; ?>');
+    expect(blayde()->string('{!! $name !!}'))->toBe('<?php echo $name; ?>');
+    expect(blayde()->string('{!!
+        $name
+    !!}'))->toBe('<?php echo $name; ?>');
+
+    expect(blayde()->string('{{{$name}}}'))->toBe('<?php echo e($name); ?>');
+    expect(blayde()->string('{{$name}}'))->toBe('<?php echo e($name); ?>');
+    expect(blayde()->string('{{ $name }}'))->toBe('<?php echo e($name); ?>');
+    expect(blayde()->string('{{
+        $name
+    }}'))->toBe('<?php echo e($name); ?>');
+    expect(blayde()->string("{{ \$name }}\n"))->toBe("<?php echo e(\$name); ?>\n\n");
+    expect(blayde()->string("{{ \$name }}\r\n"))->toBe("<?php echo e(\$name); ?>\r\n\r\n");
+    expect(blayde()->string("{{ \$name }}\n"))->toBe("<?php echo e(\$name); ?>\n\n");
+    expect(blayde()->string("{{ \$name }}\r\n"))->toBe("<?php echo e(\$name); ?>\r\n\r\n");
+
+    expect(blayde()->string('{{ "Hello world or foo" }}'))->toBe('<?php echo e("Hello world or foo"); ?>');
+    expect(blayde()->string('{{"Hello world or foo"}}'))->toBe('<?php echo e("Hello world or foo"); ?>');
+    expect(blayde()->string('{{$foo + $or + $baz}}'))->toBe('<?php echo e($foo + $or + $baz); ?>');
+    expect(blayde()->string('{{
+        "Hello world or foo"
+    }}'))->toBe('<?php echo e("Hello world or foo"); ?>');
+
+    expect(blayde()->string('{{ \'Hello world or foo\' }}'))->toBe('<?php echo e(\'Hello world or foo\'); ?>');
+    expect(blayde()->string('{{\'Hello world or foo\'}}'))->toBe('<?php echo e(\'Hello world or foo\'); ?>');
+    expect(blayde()->string('{{
+        \'Hello world or foo\'
+    }}'))->toBe('<?php echo e(\'Hello world or foo\'); ?>');
+
+    expect(blayde()->string('{{ myfunc(\'foo or bar\') }}'))->toBe('<?php echo e(myfunc(\'foo or bar\')); ?>');
+    expect(blayde()->string('{{ myfunc("foo or bar") }}'))->toBe('<?php echo e(myfunc("foo or bar")); ?>');
+    expect(blayde()->string('{{ myfunc("$name or \'foo\'") }}'))->toBe('<?php echo e(myfunc("$name or \'foo\'")); ?>');
+});
+
+test('Escaped with at echos are compiled', function () {
+    expect(blayde()->string('@{{$name}}'))->toBe('{{$name}}');
+    expect(blayde()->string('@{{ $name }}'))->toBe('{{ $name }}');
+    expect(blayde()->string('@{{
+        $name
+    }}'))->toBe('{{
+        $name
+    }}');
+    expect(blayde()->string('@{{ $name }}
+        '))->toBe('{{ $name }}
+        ');
+});

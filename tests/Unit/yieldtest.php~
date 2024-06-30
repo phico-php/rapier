@@ -1,0 +1,39 @@
+<?php
+
+namespace Phico\Tests\View\Blayde;
+
+test('yield without default content is compiled correctly', function () {
+
+    // Compile a template that yields 'bar' within the section 'foo'
+    $compiled = blayde()->string("@extends('yield')\n@section('bar')World!@endsection");
+    $expected = "Hello, World!";
+
+    expect($compiled)->toBe($expected);
+});
+
+test('yield with default content is compiled correctly', function () {
+
+    // Compile a template that yields 'bar' within the section 'foo'
+    $compiled = blayde()->string("@extends('yield')\n@section('bar')World!@endsection");
+    $expected = "Hello, World!";
+
+    expect($compiled)->toBe($expected);
+});
+
+test('yield without section is compiled correctly', function () {
+
+    // Compile a template that extends 'foo' without defining the section 'bar'
+    $compiled = blayde()->string("@extends('yield-with-default')");
+    $expected = "Hello, Default";
+
+    expect($compiled)->toBe($expected);
+});
+
+test('yield with escaped content is compiled correctly', function () {
+
+    // Compile a template that yields 'bar' within the section 'foo' with escaped content
+    $compiled = blayde()->string("@extends('yield-with-default')\n@section('bar'){{ '<World>' }}@endsection");
+    $expected = "Hello, <?php echo e('<World>'); ?>";
+
+    expect($compiled)->toBe($expected);
+});
