@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phico\View\Rapier;
 
+use Phico\View\{Cache, Templates};
+
 
 class Renderer
 {
@@ -39,10 +41,10 @@ class Renderer
         $this->directives = $directives;
         // set use_cache flag
         $this->use_cache = $use_cache;
-        // set content;
-        $this->content = "";
         // set built in directives
         $this->setBuiltinDirectives();
+        // set content;
+        $this->content = "";
     }
 
     public function render(string $template, array $data = [], bool $is_string = false): string
@@ -69,7 +71,6 @@ class Renderer
         $this->content = $this->processReplacements($this->content);
         // always restore verbatim code last
         $this->content = $this->restoreVerbatim($this->content);
-
         // store template in cache
         $this->cache->put($template, $this->content);
         // merge data fields into rendered template
@@ -77,77 +78,56 @@ class Renderer
 
         return $this->content;
     }
-
-    public function directive(string $name, callable $handler)
-    {
-        $this->directives[$name] = $handler;
-    }
-
     protected function setBuiltinDirectives()
     {
-        $this->directive('section', function ($expression) {
+        $this->directives['section'] = function ($expression) {
             return "<?php \$this->startSection{$expression}; ?>";
-        });
-
-        $this->directive('endsection', function () {
+        };
+        $this->directives['endsection'] = function () {
             return "<?php \$this->endSection(); ?>";
-        });
-
-        $this->directive('append', function () {
+        };
+        $this->directives['append'] = function () {
             return "<?php \$this->appendSection(); ?>";
-        });
-
-        $this->directive('yield', function ($expression) {
+        };
+        $this->directives['yield'] = function ($expression) {
             return "<?php echo \$this->yieldSection{$expression}; ?>";
-        });
-
-        $this->directive('extends', function ($expression) {
+        };
+        $this->directives['extends'] = function ($expression) {
             return "<?php \$this->extends{$expression}; ?>";
-        });
-
-        $this->directive('show', function () {
+        };
+        $this->directives['show'] = function () {
             return "<?php \$this->showSection(); ?>";
-        });
-
-        $this->directive('verbatim', function () {
+        };
+        $this->directives['verbatim'] = function () {
             return '@verbatim';
-        });
-
-        $this->directive('endverbatim', function () {
+        };
+        $this->directives['endverbatim'] = function () {
             return '@endverbatim';
-        });
-
-        $this->directive('include', function ($expression) {
+        };
+        $this->directives['include'] = function ($expression) {
             return "<?php \$this->includeTemplate{$expression}; ?>";
-        });
-
-        $this->directive('includeIf', function ($expression) {
+        };
+        $this->directives['includeIf'] = function ($expression) {
             return "<?php \$this->includeTemplateIf{$expression}; ?>";
-        });
-
-        $this->directive('includeWhen', function ($expression) {
+        };
+        $this->directives['includeWhen'] = function ($expression) {
             return "<?php \$this->includeTemplateWhen{$expression}; ?>";
-        });
-
-        $this->directive('push', function ($expression) {
+        };
+        $this->directives['push'] = function ($expression) {
             return "<?php \$this->startPush{$expression}; ?>";
-        });
-
-        $this->directive('endpush', function () {
+        };
+        $this->directives['endpush'] = function () {
             return "<?php \$this->endPush(); ?>";
-        });
-
-        $this->directive('stack', function ($expression) {
+        };
+        $this->directives['stack'] = function ($expression) {
             return "<?php echo \$this->yieldStack{$expression}; ?>";
-        });
-
-        $this->directive('once', function () {
+        };
+        $this->directives['once'] = function () {
             return "<?php if (!\$this->hasRenderedOnce()): ?>";
-        });
-
-        $this->directive('endonce', function () {
+        };
+        $this->directives['endonce'] = function () {
             return "<?php \$this->endOnce(); endif; ?>";
-        });
+        };
     }
 
     protected function startSection(string $name, string $default = '')
