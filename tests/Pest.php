@@ -39,7 +39,22 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+// return a rapier instance configured for tests
+function rapier(): \Phico\View\Rapier\Rapier
 {
-    // ..
+    return new \Phico\View\Rapier\Rapier([
+        'use_cache' => false,
+        'cache_path' => 'tests/cache',
+        'view_paths' => [
+            'tests/views'
+        ]
+    ]);
+}
+// compact html removing any spacing issues that might trip up tests
+function compactHtml(string $str): string
+{
+    $str = trim($str);
+    $str = preg_replace('/>(\s*?)</is', '><', $str);
+
+    return $str;
 }

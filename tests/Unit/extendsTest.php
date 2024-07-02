@@ -3,24 +3,22 @@
 namespace Phico\Tests\View\Blayde;
 
 test('Extends are compiled', function () {
-    $string = '@extends(\'foo\')
-test';
-    $expected = 'test' . PHP_EOL . '<?php echo $__env->make(\'foo\', \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
-    expect(blayde()->string($string))->toBe($expected);
 
-    $string = '@extends(name(foo))' . PHP_EOL . 'test';
-    $expected = 'test' . PHP_EOL . '<?php echo $__env->make(name(foo), \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
-    expect(blayde()->string($string))->toBe($expected);
+    $expected = '<html><head><title>App Name - Child Page Title</title></head><body><div class="sidebar"><p>This is the master sidebar.</p><p>This is appended to the master sidebar.</p></div><div class="container"><p>This is my body content.</p></div></body></html>';
+
+    $out = rapier()->render('child');
+
+    expect(compactHtml($out))->toBe(compactHtml($expected));
+
 });
 
-test('Sequential compile string calls', function () {
-    $string = '@extends(\'foo\')
-test';
-    $expected = 'test' . PHP_EOL . '<?php echo $__env->make(\'foo\', \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
-    expect(blayde()->string($string))->toBe($expected);
+test('Nested extends are compiled', function () {
 
-    // Use the same compiler instance to compile another template with @extends directive
-    $string = '@extends(name(foo))' . PHP_EOL . 'test';
-    $expected = 'test' . PHP_EOL . '<?php echo $__env->make(name(foo), \Illuminate\Support\Arr::except(get_defined_vars(), [\'__data\', \'__path\']))->render(); ?>';
-    expect(blayde()->string($string))->toBe($expected);
+    $expected = '<html><head><title>App Name - Grandchild Page Title</title></head><body><div class="sidebar"><p>This is the master sidebar.</p><p>This is appended to the master sidebar.</p></div><div class="container"><p>This is my body content.</p></div></body></html>';
+
+    $out = rapier()->render('grandchild');
+
+    expect(compactHtml($out))->toBe(compactHtml($expected));
+
 });
+
