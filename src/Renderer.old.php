@@ -11,21 +11,22 @@ class Renderer
 {
     protected Cache $cache;
     protected Templates $templates;
+    // use cached templates (default) or not (dev mode)
+    private bool $use_cache;
     // holdes built in and custom directives
     protected array $directives = [];
-    // track @sections
+    // track the @sections
     protected array $sections = [];
     protected array $section_stack = [];
-    // track @stacks
     protected array $stacks = [];
-    // track @once sections
+    // track the @once sections
     protected array $once_stack = [];
     // track which @once sections have been rendered
     protected array $once_rendered = [];
-    // track @verbatim placeholders
+    // track verbatim placeholders
     protected array $verbatim = [];
     // holds the name of the parent template to extend
-    protected string $extends = '';
+    protected null|string $extends = null;
     // holds the content as it is assembled
     protected string $content = '';
 
@@ -43,76 +44,40 @@ class Renderer
         // set built in directives
         $this->setBuiltinDirectives();
         // set content;
-        $this->content = '';
+        $this->content = "";
     }
 
     public function render(string $template, array $data = [], bool $is_string = false): string
     {
-        // return cache if we have it
-        if ($this->cache->has($template)) {
-            return $this->interpolate($this->cache->get($template), $data);
-        }
+        $this->content = ($is_string) ? $template : $this->templates->get($template);
+        $this->compile($data);
 
-        // load blade from string or template
-        $blade = ($is_string) ? $template : $this->templates->get($template);
-        // do first pass compilation
-        $blade = $this->compile($blade);
-        // loop through parent templates
-        while (!empty($this->extends)) {
+        while (!is_null($this->extends)) {
             // set parent to the name of template being extended
             $parent = $this->extends;
             // reset for handling multi-level inheritance
-            $this->extends = '';
+            $this->extends = null;
             // fetch parent content
-            $parent = $this->cache->get($parent) ?? $this->templates->get($parent);
+            $content = $this->cache->get($parent) ?? $this->templates->get($parent);
             // replace content with parent (parent sections are already saved in stacks)
-            $blade = $this->compile($parent);
+            $this->content = $content;
+            // prcess parent
+            $this->compile($data);
+            // store parent template in cache
+            $this->cache->put($parent, $content);
         }
-        // swap all regex matches in one call
-        $blade = $this->regexSwaps($blade);
+
+        // process the regex replacements once all child/parent layers are resolved
+        $this->content = $this->processReplacements($this->content);
         // always restore verbatim code last
         $this->content = $this->restoreVerbatim($this->content);
-        // save the compiled template in cache
-        $this->cache->put($template, $blade);
-        // return template interpolated with data
-        return $this->interpolate($blade, $data);
+        // store template in cache
+        $this->cache->put($template, $this->content);
+        // merge data fields into rendered template
+        $this->compile($data);
+
+        return $this->content;
     }
-
-    protected function compile(string $blade): string
-    {
-        // remove verbatim
-        $blade = $this->extractVerbatim($this->content);
-
-        foreach ($this->directives as $name => $handler) {
-            $pattern = "/@{$name}(\((.*?)\))?/";
-            $blade = preg_replace_callback($pattern, function ($matches) use ($handler) {
-                $expression = isset($matches[2]) ? "({$matches[2]})" : '()';
-                return call_user_func($handler, $expression);
-            }, $blade);
-        }
-        // always eval the code to populate this
-        $blade = $this->eval($blade);
-
-        return $blade;
-    }
-
-    protected function eval(string $blade): string
-    {
-        ob_start();
-        eval ('?>' . $blade);
-        $blade = ob_get_clean();
-        return $blade;
-    }
-
-    protected function interpolate(string $blade, array $data = [])
-    {
-        ob_start();
-        extract($data, EXTR_OVERWRITE);
-        eval ('?>' . $blade);
-        $blade = ob_get_clean();
-        return $blade;
-    }
-
     protected function setBuiltinDirectives()
     {
         $this->directives['section'] = function ($expression) {
@@ -263,7 +228,19 @@ class Renderer
         return $content;
     }
 
-    protected function regexSwaps(string $blade): string
+    protected function processDirectives(string $content): string
+    {
+        foreach ($this->directives as $name => $handler) {
+            $pattern = "/@{$name}(\((.*?)\))?/";
+            $content = preg_replace_callback($pattern, function ($matches) use ($handler) {
+                $expression = isset($matches[2]) ? "({$matches[2]})" : '()';
+                return call_user_func($handler, $expression);
+            }, $content);
+        }
+        return $content;
+    }
+
+    protected function processReplacements(string $blade): string
     {
         $map = [
 
@@ -374,4 +351,16 @@ class Renderer
 
         return preg_replace(array_keys($map), array_values($map), $blade);
     }
+
+    protected function compile(array $data = [])
+    {
+        $this->content = $this->extractVerbatim($this->content);
+        $this->content = $this->processDirectives($this->content);
+
+        ob_start();
+        extract($data, EXTR_OVERWRITE);
+        eval ('?>' . $this->content);
+        $this->content = ob_get_clean();
+    }
+
 }
